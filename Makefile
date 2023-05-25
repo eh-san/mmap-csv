@@ -3,3 +3,6 @@ mmap-csv: main.o
 
 mmap-csv.o: main.cpp
 	g++ -c main.cpp -o main.o
+
+clean:
+	rm -f mmap-csv main.o
