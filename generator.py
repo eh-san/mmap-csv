@@ -6,11 +6,13 @@ import multiprocessing
 
 
 def generate_input(i: int) -> None:
-    with open('input{}.csv'.format(i), 'w') as csvfile:
+    with open(f'input{i}.csv', 'w') as csvfile:
         csvfile.write("id,duration\n")
         rng = Random(i)
         for _ in range(0, 100_000_000):
-            csvfile.write("{},{}\n".format(10_000_000+rng.randint(0, 9_999_999), rng.randint(1, 10000)))
+            id = 10_000_000+rng.randint(0, 9_999_999)
+            duration = rng.randint(1, 10000)
+            csvfile.write(f"{id},{duration}\n")
 
 
 pool = multiprocessing.Pool()
@@ -24,4 +26,4 @@ with open('ids.csv', 'w') as csvfile:
         ids.add(10_000_000+rng.randint(0, 9_999_999))
 
     for id in ids:
-        csvfile.write("{}\n".format(id))
+        csvfile.write(f"{id}\n")
