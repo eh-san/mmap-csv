@@ -44,4 +44,4 @@ def main(argc, argv):
 
 
 if __name__ == "__main__":
-    main(len(sys.argv), sys.argv)
+    sys.exit(main(len(sys.argv), sys.argv))
