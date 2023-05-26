@@ -3,6 +3,7 @@ TARGET_EXEC ?= mmap-csv
 
 BUILD_DIR ?= ./build
 SRC_DIRS ?= ./src
+SCRIPT_DIRS ?= ./scripts
 
 SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
@@ -12,6 +13,11 @@ INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 CPPFLAGS ?= $(INC_FLAGS) -MMD -MP
+
+PREFIX ?= /usr/local
+BINDIR ?= $(DESTDIR)$(PREFIX)/bin
+
+PYTHON3 ?= python3
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
@@ -33,9 +39,12 @@ $(BUILD_DIR)/%.cpp.o: %.cpp
 
 
 .PHONY: clean
-
 clean:
 	$(RM) -r $(BUILD_DIR)
+
+.PHONY: generate-example
+generate-example:
+	@$(PTYHON3) $(SCRIPT_DIRS)/generator.py
 
 -include $(DEPS)
 
