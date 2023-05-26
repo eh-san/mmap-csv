@@ -36,3 +36,4 @@ mmap-csv
 # directories
 .vscode
 example/
+build/
