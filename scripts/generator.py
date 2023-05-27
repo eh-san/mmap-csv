@@ -2,79 +2,73 @@
 
 import os
 import sys
-import multiprocessing
+from multiprocessing import Pool, freeze_support
+from functools import partial
 from random import Random
-from dataclasses import dataclass
 import argparse
 
 SUCCESS = 0
 BAD_ARGS = 1
 
-
-@dataclass
-class InputCSV:
-    count: int = 10
-    size: int = 100_000_000
+dirname = "example"
 
 
-@dataclass
-class IDCSV:
-    size: int = 5_000_000
-
-
-def generate_input(count: int, size: int) -> None:
-    with open(f"input{count}.csv", 'w') as csvfile:
+def generate_input(i: int, size: int) -> None:
+    filename = os.path.join(dirname, f"input{i}.csv")
+    with open(filename, 'w') as csvfile:
         csvfile.write("id,duration\n")
-        rng = Random(count)
-        for _ in range(0, 100_000_000):
+        rng = Random(i)
+        for _ in range(0, size):
             id = 10_000_000+rng.randint(0, 9_999_999)
             duration = rng.randint(1, 10000)
             csvfile.write(f"{id},{duration}\n")
 
 
 def generate_id(size: int) -> None:
-    with open('ids.csv', 'w') as csvfile:
+    filename = os.path.join(dirname, 'ids.csv')
+    with open(filename, 'w') as csvfile:
         csvfile.write("id\n")
         ids = set()
         rng = Random(99)
-        while (len(ids) != 5_000_000):
+        while (len(ids) != size):
             ids.add(10_000_000+rng.randint(0, 9_999_999))
 
         for id in ids:
             csvfile.write(f"{id}\n")
 
 
-def main(argc, argv):
-    if argc == 1:
-        print('errror')
-        return 1
-
-
-    parser = argparse.ArgumentParser(description='CommandInput information')
-    parser.add_argument('--count', dest='input_count', type=int,
-                        help='Number of the input files')
-    parser.add_argument('--input-size', dest='input_size', type=int,
-                        help='Size of the input files')
-    parser.add_argument('--id-size', dest='id_size', type=int,
-                        help='Size of the id file')
-
+def main():
+    parser = argparse.ArgumentParser(description='Generate CSV Input Files')
+    parser.add_argument('-c', '--count', dest='count', type=int,
+                        help='number of the input files')
+    parser.add_argument('--large', help='large input files',
+                        action="store_true")
+    parser.add_argument('--small', help='small input files',
+                        action="store_true")
     args = parser.parse_args()
-    idcsv = IDCSV()
-    inputcsv = InputCSV()
-    
-    if id_size:= args.id_size:
-        idcsv.size = id_size
-    
-    if input_size := args.input_size:
-        inputcsv.size = input_size
+    count = 10 if args.count is None else args.count
 
-    if input_count := args.input_count:
-        inputcsv.count = input_count
+    inputsize = 10_000_000
+    idsize = 500_000
+    if args.large:
+        inputsize = inputsize * 10
+        idsize = idsize * 10
+    elif args.small:
+        inputsize = int(inputsize / 10)
+        idsize = int(idsize / 10)
 
-    pool = multiprocessing.Pool()
-    pool.map(generate_input, inputcsv.count)
+    print('generating...')
 
-    generate_id()
+    with Pool(count) as pool:
+        pool.map(partial(generate_input, size=inputsize), range(1, count + 1))
+
+    generate_id(idsize)
+
+    print('done.')
+
+    return SUCCESS
+
 
 if __name__ == "__main__":
-    sys.exit(main(len(sys.argv), sys.argv))
+    freeze_support()
+    sys.exit(main())

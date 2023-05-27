@@ -4,6 +4,7 @@ TARGET_EXEC ?= mmap-csv
 BUILD_DIR ?= ./build
 SRC_DIRS ?= ./src
 SCRIPT_DIRS ?= ./scripts
+EXAMPLE_DIRS ?= ./example
 
 SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
@@ -44,7 +45,7 @@ clean:
 
 .PHONY: generate-example
 generate-example:
-	@$(PTYHON3) $(SCRIPT_DIRS)/generator.py
+	@$(PTYHON3) $(SCRIPT_DIRS)/generator.py --small
 
 -include $(DEPS)
 
