@@ -45,7 +45,7 @@ clean:
 
 .PHONY: with-example
 with-example: $(BUILD_DIR)/$(TARGET_EXEC)
-	@$(PTYHON3) $(SCRIPT_DIRS)/generator.py --small --path $(EXAMPLE_DIRS)
+	@$(PTYHON3) $(SCRIPT_DIRS)/generator.py --count 10 --path $(EXAMPLE_DIRS)
 
 -include $(DEPS)
 

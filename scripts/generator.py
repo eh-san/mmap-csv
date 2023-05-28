@@ -42,8 +42,6 @@ def main():
                         help='path of the input files')
     parser.add_argument('--large', help='large input files',
                         action="store_true")
-    parser.add_argument('--small', help='small input files',
-                        action="store_true")
     args = parser.parse_args()
     count = 10 if args.count is None else args.count
 
@@ -52,9 +50,6 @@ def main():
     if args.large:
         inputsize = inputsize * 10
         idsize = idsize * 10
-    elif args.small:
-        inputsize = int(inputsize / 10)
-        idsize = int(idsize / 10)
 
     dirname = args.path if args.path else ''
     if path := dirname:
