@@ -8,12 +8,9 @@ from random import Random
 import argparse
 
 SUCCESS = 0
-BAD_ARGS = 1
+ERORR = 1
 
-dirname = "example"
-
-
-def generate_input(i: int, size: int) -> None:
+def generate_input(i: int, size: int, dirname: str) -> None:
     filename = os.path.join(dirname, f"input{i}.csv")
     with open(filename, 'w') as csvfile:
         csvfile.write("id,duration\n")
@@ -24,7 +21,7 @@ def generate_input(i: int, size: int) -> None:
             csvfile.write(f"{id},{duration}\n")
 
 
-def generate_id(size: int) -> None:
+def generate_id(size: int, dirname: str) -> None:
     filename = os.path.join(dirname, 'ids.csv')
     with open(filename, 'w') as csvfile:
         csvfile.write("id\n")
@@ -41,6 +38,8 @@ def main():
     parser = argparse.ArgumentParser(description='Generate CSV Input Files')
     parser.add_argument('-c', '--count', dest='count', type=int,
                         help='number of the input files')
+    parser.add_argument('-p', '--path', dest='path', type=str,
+                        help='path of the input files')
     parser.add_argument('--large', help='large input files',
                         action="store_true")
     parser.add_argument('--small', help='small input files',
@@ -57,12 +56,20 @@ def main():
         inputsize = int(inputsize / 10)
         idsize = int(idsize / 10)
 
+    dirname = args.path if args.path else ''
+    if path := dirname:
+        if not os.path.exists(path):
+            os.makedirs(path)
+        elif not os.path.isdir(path):
+            print(f"{path} must be a directory!")
+            return ERORR
+        
     print('generating...')
 
     with Pool(count) as pool:
-        pool.map(partial(generate_input, size=inputsize), range(1, count + 1))
+        pool.map(partial(generate_input, size=inputsize, dirname=dirname), range(1, count + 1))
 
-    generate_id(idsize)
+    generate_id(idsize, dirname)
 
     print('done.')
 
