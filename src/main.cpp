@@ -35,14 +35,14 @@ int main(int argc, char **argv) {
   umapvec.reserve(ID_ROW_SIZE);
   {
     unsigned long long counter = 0;
-        std::cout << "loading the ids.csv data to the specific container... " << std::endl;
+    std::cout << "loading the ids.csv data to the specific container... " << std::endl;
     unsigned int id = 0;
     while (in.read_row(id)) {
       umapvec[id].reserve(200);
       ids.push_back(id);
       ++counter;
     }
-        std::cout << "[" << counter << "] the ids container loaded (size : " << umapvec.size() << " elements)" << std::endl;
+    std::cout << "[" << counter << "] the ids container loaded (size : " << umapvec.size() << " elements)" << std::endl;
   }
 
   std::cout << "sort ids... " << std::endl;
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
   std::cout << "start to read all inputs files...\n\n" << std::endl;
 
-  for (const auto &path : paths) {
+  auto f = [&](const std::string &path) -> void {
     std::cout << "open file (" << path << ")" << std::endl;
     int fd = open(path.c_str(), O_RDONLY);
     off_t len = lseek(fd, 0, SEEK_END);
@@ -148,16 +148,20 @@ int main(int argc, char **argv) {
     close(fd);
     munmap(buff, len);
     std::cout << "---------------------------" << std::endl;
+  };
+
+  for (const auto &path : paths) {
+    f(path);
   }
 
   if (umapvec.empty()) {
     auto endTimerPoint = std::chrono::high_resolution_clock::now();
-        auto start = std::chrono::time_point_cast<std::chrono::seconds>(startTimepoint).time_since_epoch().count();
-        auto end = std::chrono::time_point_cast<std::chrono::seconds>(endTimerPoint).time_since_epoch().count();
+    auto start = std::chrono::time_point_cast<std::chrono::seconds>(startTimepoint).time_since_epoch().count();
+    auto end = std::chrono::time_point_cast<std::chrono::seconds>(endTimerPoint).time_since_epoch().count();
     auto duration = end - start;
     double minutes = duration / 60;
     double seconds = duration % 60;
-        std::cout << "\n\nempty. (duration : " << minutes << " minutes and " << seconds << " seconds)" << std::endl;
+    std::cout << "\n\nempty. (duration : " << minutes << " minutes and " << seconds << " seconds)" << std::endl;
   }
 
   // wait for sort thread done.
@@ -172,7 +176,7 @@ int main(int argc, char **argv) {
   } else {
     std::cout << "writing data... (to the out.csv file)" << std::endl;
     // print header column name to the file :
-        file << "id,last-durations,longest-durations" << "\n";
+    file << "id,last-durations,longest-durations" << "\n";
     // print data to the file :
     for (const auto &id : ids) {
       // find itearation
@@ -186,7 +190,7 @@ int main(int argc, char **argv) {
       file << id << ",";
 
       // last duration
-            for (auto rit = it->second.crbegin(); rit != (it->second.crbegin() + step); ++rit)
+      for (auto rit = it->second.crbegin(); rit != (it->second.crbegin() + step); ++rit)
         file << *rit << "|";
       if (30 <= count)
         file << *(it->second.crbegin() + 30) << ",";
@@ -197,7 +201,7 @@ int main(int argc, char **argv) {
       std::sort(it->second.rbegin(), it->second.rend());
 
       // long duration
-            for (auto jit = it->second.cbegin(); jit != (it->second.cbegin() + step); ++jit)
+      for (auto jit = it->second.cbegin(); jit != (it->second.cbegin() + step); ++jit)
         file << *jit << "|";
       if (30 <= count)
         file << *(it->second.cbegin() + 30) << "\n";
@@ -212,11 +216,11 @@ int main(int argc, char **argv) {
   }
 
   auto endTimerPoint = std::chrono::high_resolution_clock::now();
-    auto start = std::chrono::time_point_cast<std::chrono::seconds>(startTimepoint).time_since_epoch().count();
-    auto end = std::chrono::time_point_cast<std::chrono::seconds>(endTimerPoint).time_since_epoch().count();
+  auto start = std::chrono::time_point_cast<std::chrono::seconds>(startTimepoint).time_since_epoch().count();
+  auto end = std::chrono::time_point_cast<std::chrono::seconds>(endTimerPoint).time_since_epoch().count();
   auto duration = end - start;
   double minutes = duration / 60;
   double seconds = duration % 60;
-    std::cout << "\n\ndone. (duration : " << minutes << " minutes and " << seconds << " seconds)" << std::endl;
+  std::cout << "\n\ndone. (duration : " << minutes << " minutes and " << seconds << " seconds)" << std::endl;
   return 0;
 }
