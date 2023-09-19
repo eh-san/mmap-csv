@@ -17,9 +17,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "args.hxx"
 #include "csv.h"
 
-static constexpr long ID_ROW_SIZE = 5e6;
+static constexpr unsigned long long ID_ROW_SIZE = 5e6;
 using UMapVec = std::unordered_map<uint, std::vector<ushort>>;
 
 int main(int argc, char **argv) {
