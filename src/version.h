@@ -1,6 +1,6 @@
 #ifndef MMAP_CSV_VERSION_H
 #define MMAP_CSV_VERSION_H
 
-#define MMAP_CSV_VERSION_TXT "0.1"
+#define MMAP_CSV_VERSION_TXT "0.2"
 
 #endif
