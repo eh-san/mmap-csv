@@ -1,227 +1,163 @@
-#include <algorithm>
-#include <bits/stdc++.h>
-#include <chrono>
-#include <fcntl.h>
-#include <fstream>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
-#include <iterator>
-#include <map>
-#include <set>
-#include <stdio.h>
-#include <stdlib.h>
+#include <fstream>
+#include <sstream>
 #include <string>
-#include <sys/mman.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <unordered_map>
+#include <sys/types.h>
 #include <vector>
+#include <unordered_map>
+#include <cstring>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <algorithm>
+#include <filesystem>
 
-#include "args.hxx"
-#include "csv.h"
+#define CSV_INPUT_COLUMN_SIZE 2
 
-static constexpr unsigned long long ID_ROW_SIZE = 5e6;
-using UMapVec = std::unordered_map<uint, std::vector<ushort>>;
-
-int main(int argc, char **argv) {
-  auto startTimepoint = std::chrono::high_resolution_clock::now();
-  std::cout << "reading the ids.csv file..." << std::endl;
-  io::CSVReader<1> in("example/ids.csv");
-  in.read_header(io::ignore_extra_column, "id");
-
-  std::vector<uint> ids;
-  ids.reserve(ID_ROW_SIZE);
-
-  UMapVec umapvec;
-  umapvec.reserve(ID_ROW_SIZE);
-  {
-    unsigned long long counter = 0;
-    std::cout << "loading the ids.csv data to the specific container... " << std::endl;
-    unsigned int id = 0;
-    while (in.read_row(id)) {
-      umapvec[id].reserve(200);
-      ids.push_back(id);
-      ++counter;
+// Function to split a string based on a delimiter
+std::vector<std::string> split(const std::string& s, char delimiter) {
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter)) {
+        tokens.push_back(token);
     }
-    std::cout << "[" << counter << "] the ids container loaded (size : " << umapvec.size() << " elements)" << std::endl;
-  }
+    return tokens;
+}
 
-  std::cout << "sort ids... " << std::endl;
-  std::thread worker([&ids]() { std::sort(ids.begin(), ids.end()); });
-
-  std::cout << "generate file path..." << std::endl;
-  std::vector<std::string> paths;
-  paths.reserve(10);
-  paths.emplace_back("example/input1.csv");
-  paths.emplace_back("example/input2.csv");
-  paths.emplace_back("example/input3.csv");
-  paths.emplace_back("example/input4.csv");
-  paths.emplace_back("example/input5.csv");
-  paths.emplace_back("example/input6.csv");
-  paths.emplace_back("example/input7.csv");
-  paths.emplace_back("example/input8.csv");
-  paths.emplace_back("example/input9.csv");
-  paths.emplace_back("example/input10.csv");
-  std::cout << paths.size() << " file path generated." << std::endl;
-
-  std::cout << "start to read all inputs files...\n\n" << std::endl;
-
-  auto f = [&](const std::string &path) -> void {
-    std::cout << "open file (" << path << ")" << std::endl;
-    int fd = open(path.c_str(), O_RDONLY);
-    off_t len = lseek(fd, 0, SEEK_END);
-    char *buff = (char *)mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
-
-    UMapVec::iterator it = umapvec.end();
-
-    unsigned int number = 0;
-    char *p = buff;
-    off_t bytes = len;
-
-    // drop header (id, duration)
-    while (bytes > 0 && *p != '\n') {
-      ++p;
-      --bytes;
+// Function to process CSV file and update duration information
+void processCSV(const std::string& csvFileName, std::unordered_map<int, std::vector<int>>& durationMap, const std::vector<int> &vIDs) {
+    // Open the CSV file using mmap
+    int fd = open(csvFileName.c_str(), O_RDONLY);
+    if (fd == -1) {
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
     }
 
-    std::cout << "reading data..." << std::endl;
+    off_t fileSize = lseek(fd, 0, SEEK_END);
+    char* fileData = static_cast<char*>(mmap(nullptr, fileSize, PROT_READ, MAP_PRIVATE, fd, 0));
 
-    while (bytes > 1) {
-      if (*p == ',') {
-        // duration block :
-        ++p;
-        --bytes;
-
-        if (it == umapvec.end()) {
-          // don't care about duration from this non id iteration
-          while (*p != '\n') {
-            ++p;
-            --bytes;
-          }
-
-          // continue to check byte > 0
-          continue;
-        }
-
-        while (*p != '\n') {
-          if ('0' <= *p && *p <= '9') {
-            number *= 10;
-            number += *p - '0';
-          } else
-            goto OUTER;
-          ++p;
-          --bytes;
-        }
-        // duration = num
-        it->second.push_back(number);
-        number = 0;
-      } else if (*p == '\n') {
-        // id block :
-        ++p;
-        --bytes;
-
-        // read 8 byte id data ( between 10e6~20e6 ) :
-        for (int i = 0; i < 8; ++i) {
-          if ('0' <= *p && *p <= '9') {
-            number *= 10;
-            number += *p - '0';
-          } else
-            goto OUTER;
-          ++p;
-          --bytes;
-        }
-
-        // find id iteration if exist :
-        it = umapvec.find(number);
-        number = 0;
-      } else {
-      OUTER:
-        std::cerr << "can't handle." << std::endl;
-        exit(1);
-      }
-    }
-    if (*p != '\n') {
-      std::cerr << "[eof] can't handle." << std::endl;
-      exit(1);
-    }
-
-    std::cout << "close file (" << path << ")" << std::endl;
     close(fd);
-    munmap(buff, len);
-    std::cout << "---------------------------" << std::endl;
-  };
 
-  for (const auto &path : paths) {
-    f(path);
-  }
+    // Parse the CSV data
+    std::istringstream csvStream(fileData);
+    std::string line;
 
-  if (umapvec.empty()) {
-    auto endTimerPoint = std::chrono::high_resolution_clock::now();
-    auto start = std::chrono::time_point_cast<std::chrono::seconds>(startTimepoint).time_since_epoch().count();
-    auto end = std::chrono::time_point_cast<std::chrono::seconds>(endTimerPoint).time_since_epoch().count();
-    auto duration = end - start;
-    double minutes = duration / 60;
-    double seconds = duration % 60;
-    std::cout << "\n\nempty. (duration : " << minutes << " minutes and " << seconds << " seconds)" << std::endl;
-  }
+    // drop the header of the input csv file
+    std::getline(csvStream, line);
+    std::cout << "header: " << line << std::endl;
+    
 
-  // wait for sort thread done.
-  worker.join();
-  std::cout << "\n\nids sorted." << std::endl;
 
-  std::cout << "create the out.csv file..." << std::endl;
-  std::ofstream file("out.csv");
-  if (!file.is_open()) {
-    std::cerr << "the file out.csv is not open." << std::endl;
-    exit(1);
-  } else {
-    std::cout << "writing data... (to the out.csv file)" << std::endl;
-    // print header column name to the file :
-    file << "id,last-durations,longest-durations" << "\n";
-    // print data to the file :
-    for (const auto &id : ids) {
-      // find itearation
-      UMapVec::iterator it = umapvec.find(id);
-
-      // check if duration size less than 29 step
-      size_t count = it->second.size();
-      size_t step = (count > 29) ? 29 : count;
-
-      // id
-      file << id << ",";
-
-      // last duration
-      for (auto rit = it->second.crbegin(); rit != (it->second.crbegin() + step); ++rit)
-        file << *rit << "|";
-      if (30 <= count)
-        file << *(it->second.crbegin() + 30) << ",";
-      else
-        file << ",";
-
-      // sort durations descending order :
-      std::sort(it->second.rbegin(), it->second.rend());
-
-      // long duration
-      for (auto jit = it->second.cbegin(); jit != (it->second.cbegin() + step); ++jit)
-        file << *jit << "|";
-      if (30 <= count)
-        file << *(it->second.cbegin() + 30) << "\n";
-      else
-        file << "\n";
-
-      // umapvec.erase(it);
+    while (std::getline(csvStream, line)) {
+        std::vector<std::string> tokens = split(line, ',');
+        if (tokens.size() == CSV_INPUT_COLUMN_SIZE) {
+            int id = std::stoi(tokens[0]);
+            if (std::find(vIDs.begin(), vIDs.end(), id) != vIDs.end())
+            {
+                int duration = std::stoi(tokens[1]);
+                durationMap[id].push_back(duration);
+            }
+        }
     }
 
-    std::cout << "close the out.csv file." << std::endl;
-    file.close();
-  }
+    // Unmap the file
+    munmap(fileData, fileSize);
+}
 
-  auto endTimerPoint = std::chrono::high_resolution_clock::now();
-  auto start = std::chrono::time_point_cast<std::chrono::seconds>(startTimepoint).time_since_epoch().count();
-  auto end = std::chrono::time_point_cast<std::chrono::seconds>(endTimerPoint).time_since_epoch().count();
-  auto duration = end - start;
-  double minutes = duration / 60;
-  double seconds = duration % 60;
-  std::cout << "\n\ndone. (duration : " << minutes << " minutes and " << seconds << " seconds)" << std::endl;
-  return 0;
+std::vector<std::string> findCSVFiles(const std::string& path) {
+    std::vector<std::string> csvFiles;
+
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+            if (entry.is_regular_file()) {
+                std::string filename = entry.path().filename().string();
+                if (filename.find("input-") == 0 && filename.size() > 4 &&
+                    filename.compare(filename.size() - 4, 4, ".csv") == 0) {
+                    csvFiles.push_back(entry.path().string());
+                }
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& ex) {
+        std::cerr << "Error accessing directory: " << ex.what() << std::endl;
+    }
+
+    return csvFiles;
+}
+
+int main() {
+    // Read the list of IDs
+    std::vector<int> idList;
+    std::ifstream idFile("example/ids.csv");
+    std::string idLine;
+    
+    // drop the is.csv header
+    std::getline(idFile, idLine);
+    std::cout << "header: " << idLine << std::endl;
+
+    while (std::getline(idFile, idLine)) {
+        idList.push_back(std::stoi(idLine));
+    }
+
+    std::cout << idList.size() << std::endl;
+
+    std::vector<std::string> csvFiles = findCSVFiles("example/");
+
+    if (csvFiles.empty())
+    {
+        std::cout << "No CSV input files found in the specified path.\n";
+        return EXIT_FAILURE;
+    }
+
+    // Create a map to store durations for each ID
+    std::unordered_map<int, std::vector<int>> durationMap;
+
+    // Process each input file
+    for (const auto &csvFileName : csvFiles) {
+        processCSV(csvFileName, durationMap, idList);
+    }
+
+    // Create the output CSV file
+    std::ofstream outputFile("output.csv");
+    outputFile << "id,last-durations,longest-durations\n";
+
+    // Write results to the output file
+    for (const auto& entry : durationMap) {
+        const auto& id = entry.first;
+        const auto& durations = entry.second;
+
+        // Write id
+        outputFile << id << ",";
+
+        // Write last durations
+        for (size_t i = 0; i < durations.size(); ++i) {
+            outputFile << durations[i];
+            if (i < durations.size() - 1) {
+                outputFile << "|";
+            }
+        }
+        outputFile << ",";
+
+        // Write longest durations
+        auto longestDurations = durations;
+        std::sort(longestDurations.rbegin(), longestDurations.rend());
+        for (size_t i = 0; i < longestDurations.size(); ++i) {
+            outputFile << longestDurations[i];
+            if (i < longestDurations.size() - 1) {
+                outputFile << "|";
+            }
+        }
+
+        // End the line
+        outputFile << "\n";
+    }
+
+    // Close the output file
+    outputFile.close();
+
+    std::cout << "Output written to output.csv\n";
+
+    return 0;
 }

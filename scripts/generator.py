@@ -11,7 +11,7 @@ SUCCESS = 0
 ERORR = 1
 
 def generate_input(i: int, size: int, dirname: str) -> None:
-    filename = os.path.join(dirname, f"input{i}.csv")
+    filename = os.path.join(dirname, f"input-{i:03d}.csv")
     with open(filename, 'w') as csvfile:
         csvfile.write("id,duration\n")
         rng = Random(i)
@@ -48,8 +48,8 @@ def main():
     inputsize = 10_000_000
     idsize = 500_000
     if args.large:
-        inputsize = inputsize * 10
-        idsize = idsize * 10
+        inputsize *= 10
+        idsize *= 10
 
     dirname = args.path if args.path else ''
     if path := dirname:
