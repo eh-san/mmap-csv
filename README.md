@@ -1,8 +1,12 @@
 # mmap-csv
 
-A simple app to read large csv files containing id and duration columns using mmap system-call
+mmap-csv is a lightweight C++ application designed to efficiently process large CSV files containing 'id' and 'duration' columns using the mmap system call. This application addresses scenarios where you have a list of IDs in a file named `id.csv` and multiple CSV files named in the format `input-yy-mm-dd.csv` saved in a specified path.
 
-let's say we have a list of IDs that are saved in the `id.csv` file like this:
+## Input Files
+
+### id.csv
+
+This file contains a list of unique IDs. Example:
 
 |    id     |
 |:--------: |
@@ -12,9 +16,11 @@ let's say we have a list of IDs that are saved in the `id.csv` file like this:
 |    ...    |
 | 10000009  |
 
-and also we have countable large csv files that contain 2 columns with ID, Duration with format `input-yy-mm-dd.csv` saved in some path.
+### input-yy-mm-dd.csv
 
-for example, `input-23-05-22.csv` would be something like this:
+These files contain two columns, 'id' and 'duration', with entries corresponding to the given date. Example:
+
+`input-23-05-22.csv` file:
 
 |    id     | duration  |
 |:--------: |:--------: |
@@ -25,7 +31,7 @@ for example, `input-23-05-22.csv` would be something like this:
 |    ...    |    ...    |
 | 10000009  |   7476    |
 
-and `input-23-05-23.csv` would be something like this:
+and `input-23-05-23.csv` file:
 
 |    id     | duration  |
 |:--------: |:--------: |
@@ -36,12 +42,11 @@ and `input-23-05-23.csv` would be something like this:
 |    ...    |    ...    |
 | 18726855  |   6869    |
 
-we want to check if any of the IDs in the `id.csv` file match the IDs in any `input-yy-mm-dd.csv` files and we want to get the last duration and also the long duration of that specific ID.
+## Processing and Output
 
-and finally, we create an `output.csv` file containing the id, last duration, and long duration.
-(NOTE: please attend to the id 10000009)
+The application matches the IDs in `id.csv` with those in `input-yy-mm-dd.csv` files, retrieving the last duration and the longest duration for each specific ID. The results are then consolidated into an `output.csv` file.
 
-for example the `output.csv` would be something like this:
+### Example Output (output.csv)
 
 |    id     |                              last-durations                               |                             longest-durations                             |
 |:--------: |:------------------------------------------------------------------------: |:------------------------------------------------------------------------: |
