@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -50,16 +51,14 @@ void processCSV(const std::string& csvFileName, std::unordered_map<int, std::vec
     std::cout << "header: " << line << std::endl;
     
 
-
+    auto it = durationMap.end();
     while (std::getline(csvStream, line)) {
         std::vector<std::string> tokens = split(line, ',');
         if (tokens.size() == CSV_INPUT_COLUMN_SIZE) {
             int id = std::stoi(tokens[0]);
-            if (std::find(vIDs.begin(), vIDs.end(), id) != vIDs.end())
-            {
-                int duration = std::stoi(tokens[1]);
-                durationMap[id].push_back(duration);
-            }
+            it = durationMap.find(id);
+            if (it != durationMap.end())
+                it->second.emplace_back(std::stoi(tokens[1]));
         }
     }
 
@@ -87,13 +86,42 @@ std::vector<std::string> findCSVFiles(const std::string& path) {
     return csvFiles;
 }
 
+size_t countLines(const std::string& filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << filePath << std::endl;
+        return 0;
+    }
+
+    size_t lineCount = 0;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        ++lineCount;
+    }
+
+    file.close();
+    return lineCount;
+}
+
 int main() {
     // Read the list of IDs
+    const std::string id_file_path = "example/ids.csv";
+    size_t id_count = countLines(id_file_path);
+
+    if (id_count == 0)
+    {
+        std::cerr << "The file in path: " << id_file_path << " is empty" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     std::vector<int> idList;
-    std::ifstream idFile("example/ids.csv");
+    idList.reserve(id_count);
+
+    std::ifstream idFile(id_file_path);
     std::string idLine;
     
-    // drop the is.csv header
+    // drop the ids.csv header
     std::getline(idFile, idLine);
     std::cout << "header: " << idLine << std::endl;
 
@@ -113,6 +141,10 @@ int main() {
 
     // Create a map to store durations for each ID
     std::unordered_map<int, std::vector<int>> durationMap;
+    durationMap.reserve(id_count);
+
+    for (const auto &id : idList)
+        durationMap[id].emplace_back(0);
 
     // Process each input file
     for (const auto &csvFileName : csvFiles) {
