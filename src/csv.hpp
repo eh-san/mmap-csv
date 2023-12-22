@@ -11,9 +11,10 @@ class CSV : public File
 {
 public:
     CSV(const std::string_view idFilePath);
-    std::vector<std::string> split(const std::string_view s, char delimiter);
     void process(const std::string_view csvFileName);
-    void writeOutput();
+    void write();
+private:
+    std::vector<std::string> split(const std::string_view s, char delimiter);
 
 private:
     std::unordered_map<int, std::vector<int>> m_durationMap;

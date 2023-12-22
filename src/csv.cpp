@@ -99,7 +99,7 @@ void CSV::process(const std::string_view csvFileName)
     munmap(fileData, fileSize);
 }
 
-void CSV::writeOutput()
+void CSV::write()
 {
     // Create the output CSV file
     std::ofstream outputFile("output.csv");
