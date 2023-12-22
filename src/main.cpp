@@ -1,27 +1,23 @@
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <sys/types.h>
 #include <vector>
 #include <unordered_map>
-#include <cstring>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <algorithm>
 #include <filesystem>
+#include <limits>
 
-#define CSV_INPUT_COLUMN_SIZE 2
+constexpr int CSV_INPUT_COLUMN_SIZE = 2;
 
 // Function to split a string based on a delimiter
-std::vector<std::string> split(const std::string& s, char delimiter) {
+std::vector<std::string> split(const std::string_view s, char delimiter) {
     std::vector<std::string> tokens;
+    std::istringstream tokenStream(s.data());
     std::string token;
-    std::istringstream tokenStream(s);
     while (std::getline(tokenStream, token, delimiter)) {
         tokens.push_back(token);
     }
@@ -29,9 +25,9 @@ std::vector<std::string> split(const std::string& s, char delimiter) {
 }
 
 // Function to process CSV file and update duration information
-void processCSV(const std::string& csvFileName, std::unordered_map<int, std::vector<int>>& durationMap, const std::vector<int> &vIDs) {
+void processCSV(const std::string_view csvFileName, std::unordered_map<int, std::vector<int>>& durationMap, const std::vector<int>& idList) {
     // Open the CSV file using mmap
-    int fd = open(csvFileName.c_str(), O_RDONLY);
+    int fd = open(csvFileName.data(), O_RDONLY);
     if (fd == -1) {
         perror("Error opening file");
         exit(EXIT_FAILURE);
@@ -49,7 +45,6 @@ void processCSV(const std::string& csvFileName, std::unordered_map<int, std::vec
     // drop the header of the input csv file
     std::getline(csvStream, line);
     std::cout << "header: " << line << std::endl;
-    
 
     auto it = durationMap.end();
     while (std::getline(csvStream, line)) {
@@ -66,11 +61,11 @@ void processCSV(const std::string& csvFileName, std::unordered_map<int, std::vec
     munmap(fileData, fileSize);
 }
 
-std::vector<std::string> findCSVFiles(const std::string& path) {
+std::vector<std::string> findCSVFiles(const std::string_view path) {
     std::vector<std::string> csvFiles;
 
     try {
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        for (const auto& entry : std::filesystem::directory_iterator(path.data())) {
             if (entry.is_regular_file()) {
                 std::string filename = entry.path().filename().string();
                 if (filename.find("input-") == 0 && filename.size() > 4 &&
@@ -86,8 +81,8 @@ std::vector<std::string> findCSVFiles(const std::string& path) {
     return csvFiles;
 }
 
-size_t countLines(const std::string& filePath) {
-    std::ifstream file(filePath);
+size_t countLines(const std::string_view filePath) {
+    std::ifstream file(filePath.data());
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filePath << std::endl;
         return 0;
@@ -106,48 +101,46 @@ size_t countLines(const std::string& filePath) {
 
 int main() {
     // Read the list of IDs
-    const std::string id_file_path = "example/ids.csv";
-    size_t id_count = countLines(id_file_path);
+    const std::string_view idFilePath = "example/ids.csv";
+    size_t idCount = countLines(idFilePath);
 
-    if (id_count == 0)
-    {
-        std::cerr << "The file in path: " << id_file_path << " is empty" << std::endl;
+    if (idCount == 0) {
+        std::cerr << "The file in path: " << idFilePath << " is empty" << std::endl;
         return EXIT_FAILURE;
     }
 
-    std::vector<int> idList;
-    idList.reserve(id_count);
+    std::vector<int> idList(idCount, std::numeric_limits<int>::max());
 
-    std::ifstream idFile(id_file_path);
+    std::ifstream idFile(idFilePath.data());
     std::string idLine;
-    
+
     // drop the ids.csv header
     std::getline(idFile, idLine);
     std::cout << "header: " << idLine << std::endl;
 
-    while (std::getline(idFile, idLine)) {
-        idList.push_back(std::stoi(idLine));
+    for (auto& id : idList) {
+        std::getline(idFile, idLine);
+        id = std::atoi(idLine.data());
     }
 
     std::cout << idList.size() << std::endl;
 
     std::vector<std::string> csvFiles = findCSVFiles("example/");
 
-    if (csvFiles.empty())
-    {
+    if (csvFiles.empty()) {
         std::cout << "No CSV input files found in the specified path.\n";
         return EXIT_FAILURE;
     }
 
     // Create a map to store durations for each ID
     std::unordered_map<int, std::vector<int>> durationMap;
-    durationMap.reserve(id_count);
+    durationMap.reserve(idCount);
 
-    for (const auto &id : idList)
+    for (const auto& id : idList)
         durationMap[id].emplace_back(0);
 
     // Process each input file
-    for (const auto &csvFileName : csvFiles) {
+    for (const auto& csvFileName : csvFiles) {
         processCSV(csvFileName, durationMap, idList);
     }
 
