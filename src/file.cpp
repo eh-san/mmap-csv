@@ -1,15 +1,17 @@
 #include "file.hpp"
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <filesystem>
 
-size_t File::countLines(const std::string_view filePath)
+
+std::optional<size_t> File::countLines(const std::string_view filePath)
 {
     std::ifstream file(filePath.data());
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filePath << std::endl;
-        return 0;
+        return std::nullopt;
     }
 
     size_t lineCount = 0;

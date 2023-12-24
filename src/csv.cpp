@@ -18,14 +18,14 @@ constexpr int CSV_INPUT_COLUMN_SIZE = 2;
 CSV::CSV(const std::string_view idFilePath)
 {
     // Read the list of IDs
-    size_t idCount = countLines(idFilePath);
+    std::optional<size_t> idCount = countLines(idFilePath);
 
-    if (idCount == 0) {
+    if (!idCount.has_value()) {
         std::cerr << "The file in path: " << idFilePath << " is empty" << std::endl;
         exit(EXIT_FAILURE);
     }
 
-    std::vector<int> idList(idCount, std::numeric_limits<int>::max());
+    std::vector<int> idList(idCount.value(), std::numeric_limits<int>::max());
 
     std::ifstream idFile(idFilePath.data());
     std::string idLine;
@@ -44,7 +44,7 @@ CSV::CSV(const std::string_view idFilePath)
 
 
     // Map to store durations for each ID
-    m_durationMap.reserve(idCount);
+    m_durationMap.reserve(idCount.value());
 
     for (const auto& id : idList)
         m_durationMap[id].emplace_back(0);
@@ -99,7 +99,7 @@ void CSV::process(const std::string_view csvFileName)
     munmap(fileData, fileSize);
 }
 
-void CSV::write()
+void CSV::write() const
 {
     // Create the output CSV file
     std::ofstream outputFile("output.csv");

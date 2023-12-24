@@ -12,7 +12,7 @@ class CSV : public File
 public:
     CSV(const std::string_view idFilePath);
     void process(const std::string_view csvFileName);
-    void write();
+    void write() const;
 private:
     std::vector<std::string> split(const std::string_view s, char delimiter);
 
