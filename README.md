@@ -1,6 +1,6 @@
 # mmap-csv
 
-mmap-csv is a lightweight C++ application designed to efficiently process large CSV files containing 'id' and 'duration' columns using the mmap system call. This application addresses scenarios where you have a list of IDs in a file named `id.csv` and multiple CSV files named in the format `input-yy-mm-dd.csv` saved in a specified path.
+mmap-csv is a lightweight C++ application designed to efficiently process large CSV files containing 'id' and 'duration' columns using the mmap system call. This application addresses scenarios where you have a list of IDs in a file named `id.csv` and multiple CSV files named in the format `input-{number}.csv` saved in a specified path.
 
 ## Input Files
 
@@ -16,11 +16,11 @@ This file contains a list of unique IDs. Example:
 |    ...    |
 | 10000009  |
 
-### input-yy-mm-dd.csv
+### input-{number}.csv
 
 These files contain two columns, 'id' and 'duration', with entries corresponding to the given date. Example:
 
-`input-23-05-22.csv` file:
+`input-01.csv` file:
 
 |    id     | duration  |
 |:--------: |:--------: |
@@ -31,7 +31,7 @@ These files contain two columns, 'id' and 'duration', with entries corresponding
 |    ...    |    ...    |
 | 10000009  |   7476    |
 
-and `input-23-05-23.csv` file:
+and `input-02.csv` file:
 
 |    id     | duration  |
 |:--------: |:--------: |
@@ -44,7 +44,7 @@ and `input-23-05-23.csv` file:
 
 ## Processing and Output
 
-The application matches the IDs in `id.csv` with those in `input-yy-mm-dd.csv` files, retrieving the last duration and the longest duration for each specific ID. The results are then consolidated into an `output.csv` file.
+The application matches the IDs in `id.csv` with those in `input-{number}.csv` files, retrieving the last duration and the longest duration for each specific ID. The results are then consolidated into an `output.csv` file.
 
 ### Example Output (output.csv)
 
