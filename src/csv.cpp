@@ -57,7 +57,7 @@ std::vector<std::string> CSV::split(const std::string_view s, char delimiter)
     std::istringstream tokenStream(s.data());
     std::string token;
     while (std::getline(tokenStream, token, delimiter)) {
-        tokens.push_back(token);
+        tokens.push_back(std::move(token));
     }
     return tokens;
 }
