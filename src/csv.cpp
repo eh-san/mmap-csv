@@ -106,31 +106,29 @@ void CSV::write() const
     outputFile << "id,last-durations,longest-durations\n";
 
     // Write results to the output file
-    for (const auto& entry : m_durationMap) {
-        const auto& id = entry.first;
-        const auto& durations = entry.second;
+    for (auto [id, durations] : m_durationMap) {
 
         // Write id
         outputFile << id << ",";
 
         // Write last durations
-        for (size_t i = 0; i < durations.size(); ++i) {
-            outputFile << durations[i];
-            if (i < durations.size() - 1) {
-                outputFile << "|";
-            }
-        }
-        outputFile << ",";
+        std::string last_duration;
+        for (const auto& duration : durations)
+            last_duration.append(std::to_string(duration)).append("|");
+        
+        // replace last '|' with ','
+        last_duration.erase(last_duration.size() - 1).append(",");
+        outputFile << last_duration;
 
         // Write longest durations
-        auto longestDurations = durations;
-        std::sort(longestDurations.rbegin(), longestDurations.rend());
-        for (size_t i = 0; i < longestDurations.size(); ++i) {
-            outputFile << longestDurations[i];
-            if (i < longestDurations.size() - 1) {
-                outputFile << "|";
-            }
-        }
+        std::string longest_duration;
+        std::sort(durations.rbegin(), durations.rend());
+        for (const auto& duration : durations)
+            longest_duration.append(std::to_string(duration)).append("|");
+
+        // remove last '|'
+        longest_duration.erase(longest_duration.size() - 1);
+        outputFile << longest_duration;
 
         // End the line
         outputFile << "\n";
